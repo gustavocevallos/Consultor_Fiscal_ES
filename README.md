@@ -29,11 +29,15 @@ cualquier archivo modificado en un commit, genera el diff y un resumen en
 lenguaje claro de qué cambió.
 
 ### 3. Guías y comparativas
-Busca una norma y genera:
-- una **guía** en HTML con el texto consolidado + un resumen de
-  novedades/puntos clave generado por IA, descargable;
-- una **comparativa antes/después** entre dos commits (versiones) de la
-  misma norma, con resumen de los cambios clave.
+Busca una norma y genera, en ambos casos como documento HTML descargable:
+- una **guía**: resumen de novedades/puntos clave generado por IA, más un
+  enlace al texto íntegro en GitHub (no vuelca la ley completa — para una
+  norma de cientos de artículos eso sería casi tan largo como la propia
+  ley y poco útil como guía);
+- una **comparativa** entre dos commits (versiones) de la misma norma:
+  solo el **diff** (líneas añadidas/eliminadas, resaltadas) entre ambas
+  versiones, más un resumen de los cambios clave generado por IA — no el
+  texto íntegro de las dos versiones una debajo de otra.
 
 ---
 

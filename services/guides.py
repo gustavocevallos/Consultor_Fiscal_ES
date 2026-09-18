@@ -6,8 +6,9 @@ reformas".
 
 Dos funcionalidades principales:
     - generate_guide(): a partir de una ley (archivo Markdown), genera un
-      documento HTML con el texto consolidado y un resumen de "novedades
-      principales" hecho por IA.
+      documento HTML con un resumen de "novedades principales" hecho por
+      IA y un enlace al texto íntegro en GitHub (no vuelca la ley entera:
+      para una norma de cientos de artículos eso sería casi ilegible).
     - compare_versions(): dado un archivo y dos commits (o dos fechas que
       se resuelven al commit más cercano), genera una comparativa
       "antes/después" en HTML, con un resumen de los cambios clave.
@@ -72,13 +73,13 @@ def _wrap_html(title: str, body_html: str) -> str:
     .meta {{ color: #666; font-size: 0.9rem; margin-bottom: 2rem; }}
     .novedades {{ background: #f5f7fb; border-left: 4px solid #3b5bdb;
                    padding: 1rem 1.5rem; border-radius: 4px; margin-bottom: 2rem; }}
-    .diff-block {{ font-family: 'Courier New', monospace; white-space: pre-wrap;
-                    background: #f8f8f8; border: 1px solid #ddd; border-radius: 4px;
-                    padding: 1rem; }}
-    .diff-old {{ background: #fff0f0; border: 1px solid #f0c0c0; padding: 1rem;
-                  border-radius: 4px; margin-bottom: 1rem; }}
-    .diff-new {{ background: #f0fff4; border: 1px solid #b7ebc6; padding: 1rem;
-                  border-radius: 4px; }}
+    .diff-block {{ font-family: 'Courier New', monospace; font-size: 0.85rem;
+                    white-space: pre-wrap; background: #f8f8f8; border: 1px solid #ddd;
+                    border-radius: 4px; padding: 1rem; overflow-x: auto; }}
+    .diff-add {{ display: block; background: #e6ffed; color: #22863a; }}
+    .diff-del {{ display: block; background: #ffeef0; color: #b31d28; }}
+    .diff-hunk {{ display: block; color: #6f42c1; font-weight: bold; }}
+    .diff-file {{ display: block; color: #666; }}
     a {{ color: #3b5bdb; }}
 </style>
 </head>
@@ -90,15 +91,17 @@ def _wrap_html(title: str, body_html: str) -> str:
 
 def generate_guide(relative_path: str) -> GuideResult:
     """
-    Genera una guía HTML de una ley: texto consolidado (convertido de
-    Markdown a HTML) + resumen de novedades principales generado por IA.
+    Genera una guía HTML de una ley: un resumen de novedades/puntos clave
+    generado por IA, más un enlace al texto íntegro en GitHub. No incluye
+    el texto consolidado completo en el documento — para una norma de
+    cientos de artículos (como la Ley del IRPF) eso produciría un
+    documento casi tan largo como la propia ley, difícil de leer.
     """
     text = read_file(relative_path)
     if text is None:
         raise FileNotFoundError(f"No se encontró el archivo: {relative_path}")
 
     title = _extract_title(text, fallback=relative_path)
-    consolidated_html = md.markdown(text, extensions=["extra", "toc"])
 
     prompt = (
         f"Texto de la norma ({title}):\n\n{text[:6000]}\n\n"
@@ -121,8 +124,10 @@ def generate_guide(relative_path: str) -> GuideResult:
         <h2>Novedades y puntos clave</h2>
         {novedades_html}
     </div>
-    <h2>Texto consolidado</h2>
-    {consolidated_html}
+    <p>
+        Consulta el texto íntegro y actualizado de la norma en
+        <a href="{source_url}" target="_blank">GitHub</a>.
+    </p>
     """
     return GuideResult(html_content=_wrap_html(title, body), title=title)
 
@@ -139,12 +144,39 @@ def list_commits_for_file(relative_path: str, max_commits: int = 30) -> list[Com
     return get_commit_history(path_filter=relative_path, max_commits=max_commits)
 
 
+def _diff_to_html(diff_text: str) -> str:
+    """
+    Convierte un diff unificado en HTML con las líneas añadidas/eliminadas
+    resaltadas, en vez de mostrar el texto completo de ambas versiones.
+    """
+    if not diff_text.strip():
+        return "<p><em>No hay diferencias de contenido entre estas dos versiones.</em></p>"
+
+    rendered_lines = []
+    for line in diff_text.splitlines():
+        escaped = html.escape(line)
+        if line.startswith("+++") or line.startswith("---"):
+            rendered_lines.append(f'<span class="diff-file">{escaped}</span>')
+        elif line.startswith("@@"):
+            rendered_lines.append(f'<span class="diff-hunk">{escaped}</span>')
+        elif line.startswith("+"):
+            rendered_lines.append(f'<span class="diff-add">{escaped}</span>')
+        elif line.startswith("-"):
+            rendered_lines.append(f'<span class="diff-del">{escaped}</span>')
+        else:
+            rendered_lines.append(escaped)
+    return '<pre class="diff-block">' + "\n".join(rendered_lines) + "</pre>"
+
+
 def compare_versions(
     relative_path: str, old_sha: str, new_sha: str
 ) -> GuideResult:
     """
     Genera una comparativa HTML "antes/después" de un archivo entre dos
-    commits, con un resumen de los cambios clave hecho por IA.
+    commits: solo las líneas que cambiaron (diff resaltado), no el texto
+    completo de ambas versiones — para una norma larga, mostrar dos veces
+    el texto íntegro sería casi tan largo como la propia ley y dificultaría
+    ver qué cambió realmente. Incluye también un resumen de IA.
     """
     old_text = read_file_at_commit(relative_path, old_sha) or "(versión no disponible)"
     new_text = read_file_at_commit(relative_path, new_sha) or "(versión no disponible)"
@@ -159,24 +191,25 @@ def compare_versions(
     )
     summary = ask_llm(prompt=prompt, system=SYSTEM_PROMPT_COMPARATIVA)
     summary_html = md.markdown(summary)
+    diff_html = _diff_to_html(diff_text)
 
-    old_html = md.markdown(old_text, extensions=["extra"])
-    new_html = md.markdown(new_text, extensions=["extra"])
+    old_url = github_url(relative_path, commit_sha=old_sha)
+    new_url = github_url(relative_path, commit_sha=new_sha)
 
     body = f"""
     <h1>Comparativa: {html.escape(title)}</h1>
     <p class="meta">
-        Versión antigua: commit <code>{old_sha[:7]}</code> &nbsp;|&nbsp;
-        Versión nueva: commit <code>{new_sha[:7]}</code>
+        Versión antigua: <a href="{old_url}" target="_blank">commit
+        <code>{old_sha[:7]}</code></a> &nbsp;|&nbsp;
+        Versión nueva: <a href="{new_url}" target="_blank">commit
+        <code>{new_sha[:7]}</code></a>
     </p>
     <div class="novedades">
         <h2>Resumen de cambios clave</h2>
         {summary_html}
     </div>
-    <h2>Antes</h2>
-    <div class="diff-old">{old_html}</div>
-    <h2>Después</h2>
-    <div class="diff-new">{new_html}</div>
+    <h2>Diferencias</h2>
+    {diff_html}
     """
     return GuideResult(html_content=_wrap_html(f"Comparativa - {title}", body), title=title)
 
