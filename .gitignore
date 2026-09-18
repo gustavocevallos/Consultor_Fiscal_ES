@@ -4,3 +4,5 @@ __pycache__/
 .env
 legalize-es/
 .streamlit/secrets.toml
+*.log
+test_output.txt
