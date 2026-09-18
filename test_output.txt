@@ -1,0 +1,23 @@
+TIEMPO: 153.02 s
+PREGUNTA: Que dice el articulo 39 de la Ley del IRPF sobre ganancias patrimoniales no justificadas?
+
+RESPUESTA (modo simulado, primeros 500 chars):
+🔧 **Modo simulado (sin conexión a LLM real).**
+
+Esta es una respuesta de ejemplo. Para obtener una respuesta real, configura un proveedor en `utils/llm.py` (Anthropic o Gemini) y una API key válida.
+
+**Prompt que se habría enviado al modelo:**
+
+> Contexto legal recuperado (usa solo esto para responder, citando el número de fuente entre corchetes, p. ej. [Fuente 1]): [Fuente 1] Instrumento de ratificación del Convenio multilateral para aplicar las medidas relacionadas con los tratados fiscales pa
+
+CITAS: 5
+- Instrumento de ratificación del Convenio multilateral para aplicar las medidas relacionada | es/BOE-A-2021-21097.md
+  URL: https://github.com/legalize-dev/legalize-es/blob/main/es/BOE-A-2021-21097.md
+- Real Decreto 35/2023, de 24 de enero, por el que se aprueba la revisión de los planes hidr | es/BOE-A-2023-3511.md
+  URL: https://github.com/legalize-dev/legalize-es/blob/main/es/BOE-A-2023-3511.md
+- Real Decreto 1/2016, de 8 de enero, por el que se aprueba la revisión de los Planes Hidrol | es/BOE-A-2016-439.md
+  URL: https://github.com/legalize-dev/legalize-es/blob/main/es/BOE-A-2016-439.md
+- Real Decreto 531/2025, de 24 de junio, por el que se declaran diez zonas especiales de con | es/BOE-A-2025-15425.md
+  URL: https://github.com/legalize-dev/legalize-es/blob/main/es/BOE-A-2025-15425.md
+- Ley 1/2000, de 7 de enero, de Enjuiciamiento Civil | es/BOE-A-2000-323.md
+  URL: https://github.com/legalize-dev/legalize-es/blob/main/es/BOE-A-2000-323.md

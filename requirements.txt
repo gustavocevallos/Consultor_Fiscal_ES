@@ -1,0 +1,9 @@
+streamlit>=1.38
+GitPython>=3.1
+markdown>=3.6
+python-dotenv>=1.0
+google-genai>=1.0
+
+# Descomenta si más adelante cambias de proveedor de LLM (ver utils/llm.py):
+# anthropic>=0.34
+# openai>=1.40
